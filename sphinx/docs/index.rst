@@ -12,10 +12,13 @@ We will talk about the visualizations and predictions.
 
 .. toctree::
    :maxdepth: 3
-  
+ 
+   Dataset
+   DataProcessing
    visualization
    predictions
    help
+   GroupMembers
 
 Indices and tables
 ==================
