@@ -5,11 +5,14 @@ Welcome to Group 6's Documentation!
 
 This is just a test, we will update it later.
 
+<<<<<<< HEAD
 Requirements:
 
 	This project depends on the following packages:
 	...
 	...
+=======
+>>>>>>> 0fd9ec5da9183a488f6f4ae669b747ba910e88ad
 
 Contents:
 We will talk about the visualizations and predictions. 
@@ -18,14 +21,21 @@ We will talk about the visualizations and predictions.
 
 .. toctree::
    :maxdepth: 3
+<<<<<<< HEAD
 
    intro 
    okr 
+=======
+ 
+   Dataset
+   DataProcessing
+>>>>>>> 0fd9ec5da9183a488f6f4ae669b747ba910e88ad
    visualization
    predictions
    diagram
    modules
    help
+   GroupMembers
 
 Indices and tables
 ==================
