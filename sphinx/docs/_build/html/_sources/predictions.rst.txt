@@ -1,5 +1,20 @@
-predictions
+Predictions
 ===========
+
+Logistic Regression
+-------------------
+
+Random Forest Regression
+------------------------
+
+Support Vector Machine
+----------------------
+
+Decision Tree Regression
+------------------------
+
+Extreme Gradient Boosting
+-------------------------
 
 
 Predictions documnetations will be here.
