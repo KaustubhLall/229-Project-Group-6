@@ -1,4 +1,0 @@
-Objectives and Key Results
-==========================
-
-
