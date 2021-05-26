@@ -44,26 +44,21 @@ def sale_visualization(category, sale_region):
 # newly added starts here
 
 
-
-
 def gen_sales_vs_year(groupby):
     method = 'sum'
     aggdict = dict(zip(regions, [method] * len(regions)))
     data = df.groupby([groupby, 'Year']).agg(aggdict)
     data = data.reset_index()
     data = data.melt(id_vars=[groupby, 'Year'], value_vars=regions, var_name='Region', value_name='Sales')
-    
+
     data.Region = data.Region.map(sales2region).fillna(data.Region)
     return data
 
-groupby =  'Genre'
-line_data = gen_sales_vs_year(groupby).groupby(['Genre','Region'])
 
-
-
+groupby = 'Genre'
+line_data = gen_sales_vs_year(groupby).groupby(['Genre', 'Region'])
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY])
-
 
 app.layout = dbc.Container([
     # 1st row
@@ -82,7 +77,7 @@ app.layout = dbc.Container([
                      {'label': 'Others', 'value': 'Other_Sales'},
                      ],
             value='Global_Sales',
-            
+
             clearable=False,
         ), width=6),
         # 2nd col
@@ -108,8 +103,37 @@ app.layout = dbc.Container([
             dcc.Graph(id="pie-chart"), width=6
         )]
     ),
-   # 4th row
-   dbc.Row(
+    dbc.Row(),
+    dbc.Row(dbc.Col(html.H3("Sales VS Years with different region and Genre", className='text-center text-secondary '
+                                                                                        'mb-4'), width=12)),
+
+    # 5th row (swapped)
+    dbc.Row(
+        [dbc.Col(dcc.Dropdown(
+            id="dropdown_line_genre",
+
+            options=list(map(lambda x: {'label': x, 'value': x}, genres)),
+            value='Action',
+            clearable=False,
+        ), width=6),
+            dbc.Col(dcc.Dropdown(
+                id="dropdown_line_region",
+                options=list(map(lambda x: {'label': x, 'value': x}, regions_name)),
+                value='Global',
+                clearable=False,
+            ), width=6)]  # newly added
+    ),
+
+    dbc.Row(
+        dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
+    ),
+
+    dbc.Row(),
+    dbc.Row(dbc.Col(html.H3("Bar Plots of Sales VS Years with different region ", className='text-center text-info '
+                                                                                            'mb-4'), width=12)),
+
+    # 4th row
+    dbc.Row(
         dbc.Col(dcc.Dropdown(
             id="dropdown_bar",
             options=[{'label': 'Global', 'value': 'Global_Sales'},
@@ -120,35 +144,14 @@ app.layout = dbc.Container([
                      ],
             value='Global_Sales',
             clearable=False,
-        ),width=6)  # newly added
+        ), width=12)  # newly added  # modified the width
     ),
     # 5th row
     dbc.Row(
         dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
     ),
-    
-   dbc.Row(
-        [dbc.Col(dcc.Dropdown(
-            id="dropdown_line_genre",
-       
-            options = list(map(lambda x: {'label':x,'value':x},genres)),
-            value='Action',
-            clearable=False,
-        ),width=6), 
-         dbc.Col(dcc.Dropdown(
-            id="dropdown_line_region",
-            options=list(map(lambda x: {'label':x,'value':x},regions_name)),
-            value='Global',
-            clearable=False,
-        ),width=6)] # newly added
-    ),
-    
-    dbc.Row(
-        dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
-    )
-   
-])
 
+])
 
 
 @app.callback(
@@ -163,34 +166,34 @@ def update_bar_chart(sales, category):
 @app.callback(
     Output("pie-chart", "figure"),
     [Input("dropdown", "value"), Input("dropdown_tab", "value")])
-def update_pie_chart(sales, category):   
+def update_pie_chart(sales, category):
     dff = sale_visualization(category, sales)
     fig = px.pie(dff, values=sales, names=category)
     return fig
 
-@app.callback(
-    Output("bar-pie-chart", "children"),
-    Input("dropdown_bar", "value"))
-def update_bar_pie_chart(region):   
-    df_filtered = df.groupby(['Year', 'Genre'])[region].sum().unstack()
-    value_max = int(df_filtered.sum(1).max()*1.1)
-    hv_bar = df_filtered.hvplot.bar(stacked=True, rot=45)\
-            .redim(value=hv.Dimension('value', label='Sales', range=(0, value_max)))\
-            .relabel('Sales(millions)')
-    hv_bar = to_dash(app, [hv_bar])
-    return hv_bar.children
 
 @app.callback(
     Output("line-chart", "children"),
     [Input("dropdown_line_genre", "value"), Input("dropdown_line_region", "value")])
-def update_line_chart(genre,region):
-    data = line_data.get_group((genre,region))
-    hv_line = hv.Dataset(data=data,vdims=['Sales']).to(hv.Curve,'Year','Sales')
+def update_line_chart(genre, region):
+    data = line_data.get_group((genre, region))
+    hv_line = hv.Dataset(data=data, vdims=['Sales']).to(hv.Curve, 'Year', 'Sales')
     hv_line = to_dash(app, [hv_line])
     return hv_line.children
 
 
+@app.callback(
+    Output("bar-pie-chart", "children"),
+    Input("dropdown_bar", "value"))
+def update_bar_pie_chart(region):
+    df_filtered = df.groupby(['Year', 'Genre'])[region].sum().unstack()
+    value_max = int(df_filtered.sum(1).max() * 1.1)
+    hv_bar = df_filtered.hvplot.bar(stacked=True, rot=45) \
+        .redim(value=hv.Dimension('value', label='Sales', range=(0, value_max))) \
+        .relabel('Sales(millions)')
+    hv_bar = to_dash(app, [hv_bar])
+    return hv_bar.children
+
 
 if __name__ == '__main__':
-    app.run_server(host='moss8')
-    
+    app.run_server()
