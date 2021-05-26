@@ -6,6 +6,14 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 import pandas as pd
 
+from holoviews.plotting.plotly.dash import to_dash
+import holoviews as hv
+
+from holoviews import opts
+import hvplot.pandas
+import panel as pn
+
+hv.extension('plotly')
 df = pd.read_csv("preprocess_data.csv")
 df.head()
 
@@ -31,33 +39,115 @@ def sale_visualization(category, sale_region):
     return dff
 
 
+# newly added starts here
+res = df.groupby(['Year', 'Genre']).NA_Sales.sum().unstack().hvplot.bar(stacked=True, rot=45) \
+    .redim(value=hv.Dimension('value', label='Sales', range=(0, 500))) \
+    .relabel('Sales(millions)')
+# res.opts(tools=['hover'], legend_position='left', color_index='Variable', alpha=0.5, color=hv.Palette('Category20'),
+#          width=800, height=400)
+
+
+regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
+regions_name = ['North America', 'Europe', 'Japan', 'Other Regions', 'Global']
+
+
+def gen_sales_vs_year(groupby):
+    method = 'sum'
+    aggdict = dict(zip(regions, [method] * len(regions)))
+    data = df.groupby([groupby, 'Year']).agg(aggdict)
+    data = data.reset_index()
+    data = data.melt(id_vars=[groupby, 'Year'], value_vars=regions, var_name='Region', value_name='Sales')
+    r_dict = dict(zip(regions, regions_name))
+    data.Region = data.Region.map(r_dict).fillna(data.Region)
+    return data
+
+
+groupby = 'Genre'
+data = gen_sales_vs_year(groupby)
+result = hv.Dataset(data=data, vdims=['Sales']).to(hv.Curve, 'Year', 'Sales', groupby=[groupby, 'Region'])
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY])
 
-app.layout = html.Div([
-    html.H1("interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'),
-    dcc.Dropdown(
-        id="dropdown",
-        options=[{'label': 'Global_Sales', 'value': 'Global_Sales'},
-                 {'label': 'NA_Sales', 'value': 'NA_Sales'},
-                 {'label': 'EU_Sales', 'value': 'EU_Sales'},
-                 {'label': 'JP_Sales', 'value': 'JP_Sales'}
-                 ],
-        value='Global_Sales',
-        clearable=False,
+hv_comp = to_dash(app, [res, result])
+
+# newly added ends here
+
+app.layout = dbc.Container([
+    # 1st row
+    dbc.Row(
+        dbc.Col(html.H1("interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'), width=12)
     ),
-    dcc.Dropdown(
-        id="dropdown_tab",
-        options=[{'label': 'Publisher', 'value': 'Publisher'},
-                 {'label': 'Genre', 'value': 'Genre'},
-                 {'label': 'Platform', 'value': 'Platform'}
-                 ],
-        value='Publisher',
-        clearable=False,
+    # 2nd row
+    dbc.Row([
+        # 1st col
+        dbc.Col(dcc.Dropdown(
+            id="dropdown",
+            options=[{'label': 'Global_Sales', 'value': 'Global_Sales'},
+                     {'label': 'NA_Sales', 'value': 'NA_Sales'},
+                     {'label': 'EU_Sales', 'value': 'EU_Sales'},
+                     {'label': 'JP_Sales', 'value': 'JP_Sales'}
+                     ],
+            value='Global_Sales',
+            clearable=False,
+        ), width=6),
+        # 2nd col
+        dbc.Col(dcc.Dropdown(
+            id="dropdown_tab",
+            options=[{'label': 'Publisher', 'value': 'Publisher'},
+                     {'label': 'Genre', 'value': 'Genre'},
+                     {'label': 'Platform', 'value': 'Platform'}
+                     ],
+            value='Publisher',
+            clearable=False,
+        ), width=6),
+    ]),
+
+    # 3rd row
+    dbc.Row([
+        # 1st col
+        dbc.Col(
+            dcc.Graph(id="bar-chart"), width=6
+        ),
+        # 2nd col
+        dbc.Col(
+            dcc.Graph(id="pie-chart"), width=6
+        )]
     ),
-    dcc.Graph(id="bar-chart"),
-    html.H3("Corresponding Pie Chart based on above user inputs", className='text-center text-secondary'),
-    dcc.Graph(id="pie-chart"),
+
+    # 4nd row
+    dbc.Row(
+        dbc.Col(html.Div(hv_comp.children), width=12)  # newly added
+    )
+
 ])
+
+
+# app.layout = html.Div([
+#     html.H1("interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'),
+#     dcc.Dropdown(
+#         id="dropdown",
+#         options=[{'label': 'Global_Sales', 'value': 'Global_Sales'},
+#                  {'label': 'NA_Sales', 'value': 'NA_Sales'},
+#                  {'label': 'EU_Sales', 'value': 'EU_Sales'},
+#                  {'label': 'JP_Sales', 'value': 'JP_Sales'}
+#                  ],
+#         value='Global_Sales',
+#         clearable=False,
+#     ),
+#     dcc.Dropdown(
+#         id="dropdown_tab",
+#         options=[{'label': 'Publisher', 'value': 'Publisher'},
+#                  {'label': 'Genre', 'value': 'Genre'},
+#                  {'label': 'Platform', 'value': 'Platform'}
+#                  ],
+#         value='Publisher',
+#         clearable=False,
+#     ),
+#     dcc.Graph(id="bar-chart"),
+#     html.H3("Corresponding Pie Chart based on above user inputs", className='text-center text-secondary'),
+#     dcc.Graph(id="pie-chart"),
+#     html.Div(hv_comp.children)  # newly added
+# ])
 
 
 @app.callback(
