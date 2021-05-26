@@ -11,11 +11,13 @@ import holoviews as hv
 
 from holoviews import opts
 import hvplot.pandas
-import panel as pn
 
 hv.extension('plotly')
 df = pd.read_csv("preprocess_data.csv")
-df.head()
+genres = df.Genre.unique().tolist()
+regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
+regions_name = ['North America', 'Europe', 'Japan', 'Other Regions', 'Global']
+sales2region = dict(zip(regions, regions_name))
 
 
 def sale_visualization(category, sale_region):
@@ -40,15 +42,8 @@ def sale_visualization(category, sale_region):
 
 
 # newly added starts here
-res = df.groupby(['Year', 'Genre']).NA_Sales.sum().unstack().hvplot.bar(stacked=True, rot=45) \
-    .redim(value=hv.Dimension('value', label='Sales', range=(0, 500))) \
-    .relabel('Sales(millions)')
-# res.opts(tools=['hover'], legend_position='left', color_index='Variable', alpha=0.5, color=hv.Palette('Category20'),
-#          width=800, height=400)
 
 
-regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
-regions_name = ['North America', 'Europe', 'Japan', 'Other Regions', 'Global']
 
 
 def gen_sales_vs_year(groupby):
@@ -57,37 +52,37 @@ def gen_sales_vs_year(groupby):
     data = df.groupby([groupby, 'Year']).agg(aggdict)
     data = data.reset_index()
     data = data.melt(id_vars=[groupby, 'Year'], value_vars=regions, var_name='Region', value_name='Sales')
-    r_dict = dict(zip(regions, regions_name))
-    data.Region = data.Region.map(r_dict).fillna(data.Region)
+    
+    data.Region = data.Region.map(sales2region).fillna(data.Region)
     return data
 
+groupby =  'Genre'
+line_data = gen_sales_vs_year(groupby).groupby(['Genre','Region'])
 
-groupby = 'Genre'
-data = gen_sales_vs_year(groupby)
-result = hv.Dataset(data=data, vdims=['Sales']).to(hv.Curve, 'Year', 'Sales', groupby=[groupby, 'Region'])
+
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.MINTY])
 
-hv_comp = to_dash(app, [res, result])
-
-# newly added ends here
 
 app.layout = dbc.Container([
     # 1st row
     dbc.Row(
-        dbc.Col(html.H1("interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'), width=12)
+        dbc.Col(html.H1("Interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'), width=12)
     ),
     # 2nd row
     dbc.Row([
         # 1st col
         dbc.Col(dcc.Dropdown(
             id="dropdown",
-            options=[{'label': 'Global_Sales', 'value': 'Global_Sales'},
-                     {'label': 'NA_Sales', 'value': 'NA_Sales'},
-                     {'label': 'EU_Sales', 'value': 'EU_Sales'},
-                     {'label': 'JP_Sales', 'value': 'JP_Sales'}
+            options=[{'label': 'Global', 'value': 'Global_Sales'},
+                     {'label': 'North America', 'value': 'NA_Sales'},
+                     {'label': 'Europe', 'value': 'EU_Sales'},
+                     {'label': 'Japan', 'value': 'JP_Sales'},
+                     {'label': 'Others', 'value': 'Other_Sales'},
                      ],
             value='Global_Sales',
+            
             clearable=False,
         ), width=6),
         # 2nd col
@@ -113,150 +108,89 @@ app.layout = dbc.Container([
             dcc.Graph(id="pie-chart"), width=6
         )]
     ),
-
-    # 4nd row
+   # 4th row
+   dbc.Row(
+        dbc.Col(dcc.Dropdown(
+            id="dropdown_bar",
+            options=[{'label': 'Global', 'value': 'Global_Sales'},
+                     {'label': 'North America', 'value': 'NA_Sales'},
+                     {'label': 'Europe', 'value': 'EU_Sales'},
+                     {'label': 'Japan', 'value': 'JP_Sales'},
+                     {'label': 'Other Regions', 'value': 'Other_Sales'},
+                     ],
+            value='Global_Sales',
+            clearable=False,
+        ),width=6)  # newly added
+    ),
+    # 5th row
     dbc.Row(
-        dbc.Col(html.Div(hv_comp.children), width=12)  # newly added
+        dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
+    ),
+    
+   dbc.Row(
+        [dbc.Col(dcc.Dropdown(
+            id="dropdown_line_genre",
+       
+            options = list(map(lambda x: {'label':x,'value':x},genres)),
+            value='Action',
+            clearable=False,
+        ),width=6), 
+         dbc.Col(dcc.Dropdown(
+            id="dropdown_line_region",
+            options=list(map(lambda x: {'label':x,'value':x},regions_name)),
+            value='Global',
+            clearable=False,
+        ),width=6)] # newly added
+    ),
+    
+    dbc.Row(
+        dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
     )
-
+   
 ])
 
-
-# app.layout = html.Div([
-#     html.H1("interactive Video Games Sales Dashboard", className='text-center text-primary mb-4'),
-#     dcc.Dropdown(
-#         id="dropdown",
-#         options=[{'label': 'Global_Sales', 'value': 'Global_Sales'},
-#                  {'label': 'NA_Sales', 'value': 'NA_Sales'},
-#                  {'label': 'EU_Sales', 'value': 'EU_Sales'},
-#                  {'label': 'JP_Sales', 'value': 'JP_Sales'}
-#                  ],
-#         value='Global_Sales',
-#         clearable=False,
-#     ),
-#     dcc.Dropdown(
-#         id="dropdown_tab",
-#         options=[{'label': 'Publisher', 'value': 'Publisher'},
-#                  {'label': 'Genre', 'value': 'Genre'},
-#                  {'label': 'Platform', 'value': 'Platform'}
-#                  ],
-#         value='Publisher',
-#         clearable=False,
-#     ),
-#     dcc.Graph(id="bar-chart"),
-#     html.H3("Corresponding Pie Chart based on above user inputs", className='text-center text-secondary'),
-#     dcc.Graph(id="pie-chart"),
-#     html.Div(hv_comp.children)  # newly added
-# ])
 
 
 @app.callback(
     Output("bar-chart", "figure"),
     [Input("dropdown", "value"), Input("dropdown_tab", "value")])
 def update_bar_chart(sales, category):
-    if sales == 'Global_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'Global_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'Global_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.bar(dff, x=category, y=sales)
-        return fig
+    dff = sale_visualization(category, sales)
+    fig = px.bar(dff, x=category, y=sales)
+    return fig
 
 
 @app.callback(
     Output("pie-chart", "figure"),
     [Input("dropdown", "value"), Input("dropdown_tab", "value")])
-def update_pie_chart(sales, category):
-    if sales == 'Global_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'Global_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'Global_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'NA_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'EU_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Publisher':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Genre':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
-    elif sales == 'JP_Sales' and category == 'Platform':
-        dff = sale_visualization(category, sales)
-        fig = px.pie(dff, values=sales, names=category)
-        return fig
+def update_pie_chart(sales, category):   
+    dff = sale_visualization(category, sales)
+    fig = px.pie(dff, values=sales, names=category)
+    return fig
+
+@app.callback(
+    Output("bar-pie-chart", "children"),
+    Input("dropdown_bar", "value"))
+def update_bar_pie_chart(region):   
+    df_filtered = df.groupby(['Year', 'Genre'])[region].sum().unstack()
+    value_max = int(df_filtered.sum(1).max()*1.1)
+    hv_bar = df_filtered.hvplot.bar(stacked=True, rot=45)\
+            .redim(value=hv.Dimension('value', label='Sales', range=(0, value_max)))\
+            .relabel('Sales(millions)')
+    hv_bar = to_dash(app, [hv_bar])
+    return hv_bar.children
+
+@app.callback(
+    Output("line-chart", "children"),
+    [Input("dropdown_line_genre", "value"), Input("dropdown_line_region", "value")])
+def update_line_chart(genre,region):
+    data = line_data.get_group((genre,region))
+    hv_line = hv.Dataset(data=data,vdims=['Sales']).to(hv.Curve,'Year','Sales')
+    hv_line = to_dash(app, [hv_line])
+    return hv_line.children
+
 
 
 if __name__ == '__main__':
-    app.run_server()
+    app.run_server(host='moss8')
+    
