@@ -2,6 +2,7 @@
 Group repo 
 
 Dashboard beta interface
-![image](https://user-images.githubusercontent.com/50532010/119598720-52659600-bd98-11eb-8cc5-25223bea828e.png)
+![image](https://user-images.githubusercontent.com/50532010/119612868-44703f00-bdb1-11eb-9e33-e0d5ab686d78.png)
+![image](https://user-images.githubusercontent.com/50532010/119612887-4b974d00-bdb1-11eb-87eb-06813c9fedaf.png)
 
 
