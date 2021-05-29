@@ -9,12 +9,20 @@ import pandas as pd
 from holoviews.plotting.plotly.dash import to_dash
 import holoviews as hv
 
+import pandas as pd
+import numpy as np
+import pickle
+import os
+from collections import defaultdict
+
 from holoviews import opts
 import hvplot.pandas
 
 hv.extension('plotly')
 df = pd.read_csv("preprocess_data.csv")
 genres = df.Genre.unique().tolist()
+platforms = df.Platform.unique().tolist()
+publishers = df.Publisher.unique().tolist()
 regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
 regions_name = ['North America', 'Europe', 'Japan', 'Other Regions', 'Global']
 sales2region = dict(zip(regions, regions_name))
@@ -39,6 +47,69 @@ def sale_visualization(category, sale_region):
         dic[s[0]] = s[1]
     dff = pd.DataFrame(list(dic.items()), columns=[category, sale_region])
     return dff
+
+
+def predict_sales(platform, genre, publisher, region, model_type="XG", models_and_encoder_dir="models_and_encoder"):
+    # Assert that all inputs are strings
+    assert all(isinstance(param, str) for param in locals().values())
+
+    # Assert that a valid region and model type have been given
+    regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
+    model_type = model_type.lower()
+    models_d = {'rf': 'rf_model.pkl',
+                'knn': 'knn_model.pkl',
+                'dt': 'dt_model.pkl',
+                'xg': 'xg_model_'}  # xg requires a different model for each region
+    assert region in regions
+    assert model_type in models_d.keys()
+
+    # Assert that the pickle files for the encoder and the feature values exist
+    encoder_file = os.path.join(models_and_encoder_dir, "encoder.pkl")
+    feature_values_file = os.path.join(models_and_encoder_dir, "feature_values.pkl")
+    assert os.path.exists(encoder_file)
+    assert os.path.exists(feature_values_file)
+
+    # Load the label encoder and the possible values for the features
+    with open(encoder_file, "rb") as f:
+        le = pickle.load(f)
+
+    with open(feature_values_file, "rb") as f:
+        feature_values = pickle.load(f)
+
+    # Assert that the given parameters are viable inputs to the models
+    # assert platform in feature_values['Platform']
+    # assert genre in feature_values['Genre']
+    # assert publisher in feature_values['Publisher']
+
+    # Encode the labels for the new input
+    x1 = le['Platform'].transform([platform])[0]
+    x2 = le['Genre'].transform([genre])[0]
+    x3 = le['Publisher'].transform([publisher])[0]
+    x_new = np.array([x1, x2, x3]).reshape(-1, 3)
+
+    if model_type == 'xg':
+        # Load specific regional model for xg
+        model_file = os.path.join(models_and_encoder_dir, models_d[model_type] + region + ".pkl")
+        with open(model_file, "rb") as f:
+            model = pickle.load(f)
+
+        # Make sales prediction (only outputs sales for given region)
+        preds = model.predict(x_new)
+        sales = preds[0]
+
+    else:
+        # Load the specified model
+        model_file = os.path.join(models_and_encoder_dir, models_d[model_type])
+        with open(model_file, "rb") as f:
+            model = pickle.load(f)
+
+        # Make sales prediction (outputs all sales for NA,EU,JP, and Global)
+        preds = model.predict(x_new)
+
+        # Extract specific regional sales
+        sales = preds[0][regions.index(region)]
+
+    return sales
 
 
 # newly added starts here
@@ -151,6 +222,55 @@ app.layout = dbc.Container([
         dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
     ),
 
+    html.Br(),
+    html.Br(),
+    dbc.Row(dbc.Col(html.H3("Prediction model", className='text-center text-info '
+                                                          'mb-4'), width=12)),
+
+    # 7th row prediction dropdown
+    html.Br(),
+    dbc.Row(
+        [dbc.Col(dcc.Dropdown(
+            id="pred-platform",
+            options=list(map(lambda x: {'label': x, 'value': x}, platforms)),
+            value='Platform',
+
+            clearable=False,
+        ), width=3),
+        # 2nd col
+        dbc.Col(dcc.Dropdown(
+            id="pred-genre",
+            options=list(map(lambda x: {'label': x, 'value': x}, genres)),
+            value='Action',
+            clearable=False,
+        ), width=3),
+        # 3rd col
+        dbc.Col(dcc.Dropdown(
+            id="pred-publisher",
+            options=list(map(lambda x: {'label': x, 'value': x}, publishers)),
+            value='Nintendo',
+            clearable=False,
+        ), width=3),
+        # 4th col
+        dbc.Col(dcc.Dropdown(
+            id="pred-region",
+            options=[{'label': 'Global', 'value': 'Global_Sales'},
+                     {'label': 'North America', 'value': 'NA_Sales'},
+                     {'label': 'Europe', 'value': 'EU_Sales'},
+                     {'label': 'Japan', 'value': 'JP_Sales'},
+                     {'label': 'Others', 'value': 'Other_Sales'},
+                     ],
+            value='Global_Sales',
+            clearable=False,
+        ), width=3)]
+    ),
+
+    html.Br(),
+    html.Br(),
+
+    # 8th row returned text
+    dbc.Row(html.Div(id="pred-result", style={'width':'75%', 'margin':50, 'textAlign': 'center', 'display': 'inline-block'}))
+
 ])
 
 
@@ -193,6 +313,16 @@ def update_bar_pie_chart(region):
         .relabel('Sales(millions)')
     hv_bar = to_dash(app, [hv_bar])
     return hv_bar.children
+
+
+@app.callback(
+    Output("pred-result", "children"),
+    [Input("pred-platform", "value"), Input("pred-genre", "value"), Input("pred-publisher", "value"),
+     Input("pred-region", "value")])
+def prediction_model(selected_platform, selected_genre, selected_publisher, selected_region):
+    # platform, genre, publisher, region,
+    pred_result = predict_sales(selected_platform, selected_genre, selected_publisher, selected_region)
+    return "The sales prediction is: {}".format(pred_result)
 
 
 if __name__ == '__main__':
