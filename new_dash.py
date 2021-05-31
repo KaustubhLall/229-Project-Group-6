@@ -26,7 +26,7 @@ if not sys.warnoptions:
     warnings.simplefilter("ignore")
 
 hv.extension('plotly')
-df = pd.read_csv("Cleaned Data.csv")
+df = pd.read_csv("preprocess_data.csv")
 genres = df.Genre.unique().tolist()
 platforms = df.Platform.unique().tolist()
 publishers = df.Publisher.unique().tolist()
@@ -344,7 +344,7 @@ def update_bar_pie_chart(region):
 def prediction_model(selected_platform, selected_genre, selected_publisher, selected_region):
     # platform, genre, publisher, region,
     pred_result = predict_sales(selected_platform, selected_genre, selected_publisher, selected_region)
-    return "The sales prediction is: {}".format(pred_result)
+    return "The predicted sales is: {} million USD".format(round(pred_result, 3))
 
 
 if __name__ == '__main__':
