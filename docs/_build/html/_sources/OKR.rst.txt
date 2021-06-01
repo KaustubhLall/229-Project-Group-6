@@ -81,6 +81,17 @@ Objectives and Key Results
 
 Obstacles and Problems
 ----------------------
+Setting up the Dash app:
+ 
+1. No previous experience with the Plotly Dash package. It took me an entire day to figure out the syntax and set up the structure for our dashboard.
+
+2. Some dashboard components seem to interfere with other components. When I designed the initial layout and put the visualization in, there had been many weird errors coming out because of the interference between different components. 
+
+3. The original code for the visualization had to be changed to fit the syntax of the Plotly Dash. Specially, the Plotly Dash is only compatible with backend ‘plotly’ but not ‘bokeh‘.
+The code in jupyter notebook using ‘bokeh’ backend had to be adapted in line with ‘plotly’ backend because some figure stylings are not supported.
+
+4. For the layout part, many styles were encoded as CSS format and It took me a while to properly adjust the layouts.
+
 
 
 

@@ -4,6 +4,39 @@ Visualization
 
 After the pre-processing step, we have the following Visualizations to better undestand the data.
 
+Dashboard Plots
+---------------
+
+In order to find the overall distribution of the video game sales, we have the following plots. We have options to choose different regions and different topics such as Publisher, Genre ,and Platform. For example, for Global sales and Publisher we have,
+
+.. image:: plots/1a.jpg
+   :width: 600
+
+
+
+.. image:: plots/2a.jpg
+   :width: 600
+
+
+For sales vs years with different regions and genres,
+
+
+.. image:: plots/3a.jpg
+   :width: 800 
+
+we can change the regions and also topics including action, shooter and etc.
+
+And finally we have sales barplots with different genres by choosing different regions. For example, for Global sales we have,
+
+
+.. image:: plots/4a.jpg
+   :width: 800 
+
+
+Other Plots
+-----------
+Here are more plots to underastand the data better.
+
 The correlation between the features,
 
 .. image:: plots/1.png
