@@ -257,7 +257,7 @@ app.layout = dbc.Container([
                         [dbc.Col(dcc.Dropdown(
                             id="pred-platform",
                             options=list(map(lambda x: {'label': x, 'value': x}, platforms)),
-                            value='Platform',
+                            value='Console',
 
                             clearable=False,
                         ), width=3),
