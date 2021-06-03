@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.express as px
+import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import pandas as pd
 
@@ -18,12 +19,9 @@ from collections import defaultdict
 from holoviews import opts
 import hvplot.pandas
 
+from scipy import stats
 
-import sys
-import warnings
 
-if not sys.warnoptions:
-    warnings.simplefilter("ignore")
 
 hv.extension('plotly')
 df = pd.read_csv("preprocess_data.csv")
@@ -223,8 +221,6 @@ app.layout = dbc.Container([
                 dbc.Row(
                     dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
                 ),
-
-                dbc.Row(),
                 dbc.Row(dbc.Col(html.H3("Bar Plots of Sales VS Years with different region ", className='text-center text-info '
                                                                                                         'mb-4'), width=12)),
                 dbc.Row(dcc.Markdown("""
@@ -247,7 +243,40 @@ app.layout = dbc.Container([
                 # 5th row
                 dbc.Row(
                     dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
-                )],label='Data Exploration'),
+                ),
+                dbc.Row(),
+                dbc.Row(dbc.Col(html.H3("Feature Importance analysis", className='text-center text-warning '
+                                                                                                        'mb-4'), width=12)),
+                dbc.Row(dcc.Markdown("""
+                 The left bar chart shows feature importance (F-statistic) and the right bar chart shows the corresponding p-value, under the evaluation of one-way ANOVA. 
+                """)),
+                # 4th row
+                dbc.Row(
+                    dbc.Col(dcc.Dropdown(
+                        id="dropdown_anova",
+                        options=[{'label': 'Global', 'value': 'Global_Sales'},
+                                 {'label': 'North America', 'value': 'NA_Sales'},
+                                 {'label': 'Europe', 'value': 'EU_Sales'},
+                                 {'label': 'Japan', 'value': 'JP_Sales'},
+                                 {'label': 'Other Regions', 'value': 'Other_Sales'},
+                                 ],
+                        value='Global_Sales',
+                        clearable=False,
+                    ), width=12)  # newly added  # modified the width
+                ),
+                
+        
+               dbc.Row([
+                    # 1st col
+                    dbc.Col(
+                        dcc.Graph(id="bar-fet-importance"), width=6
+                    ),
+                    # 2nd col
+                    dbc.Col(
+                        dcc.Graph(id="bar-p-value"), width=6
+                    )]
+                  )
+                ],label='Data Exploration'),
                dbc.Tab([dbc.Row(dbc.Col(html.H3("Prediction model", className='text-center text-info mb-4'), width=12)),
     # 7th row prediction dropdown
                dbc.Row(dcc.Markdown("""
@@ -346,7 +375,51 @@ def prediction_model(selected_platform, selected_genre, selected_publisher, sele
     pred_result = predict_sales(selected_platform, selected_genre, selected_publisher, selected_region)
     return "The predicted sales is: {} million USD".format(round(pred_result, 3))
 
+@app.callback(
+    [Output("bar-fet-importance", "figure"), Output("bar-p-value", "figure")],
+    Input("dropdown_anova", "value"))
+def fet_anova_bars(region):
+    
+    fets = ['Genre','Platform','Publisher']
 
+    colors = ['blue', 'blueviolet', 'brown']
+    result = {}
+    for fet in fets:
+        sales_grouped = df.groupby(by=fet)[region].agg(list).values.tolist()
+        # result = {fet:(importance, p-value)}
+        result[fet] = tuple(stats.f_oneway(*sales_grouped))
+
+           
+    fet_importance = list(map(lambda x:x[0], result.values()))
+    p_value = list(map(lambda x:x[1], result.values()))
+    fet_importance_fig = go.Figure(go.Bar(
+            x=list(result.keys()),
+            y=fet_importance,
+            marker={'color': colors },
+        ),
+            layout=dict(title="Categorical Feature Importance")
+        )
+    p_value_fig = go.Figure([
+            go.Bar(
+                x=list(result.keys()),
+                y=p_value,
+                marker={'color': colors},
+            ),
+            go.Scatter(
+                x=[list(result.keys())[0], list(result.keys())[-1]],
+                y=[0.05, 0.05],
+                mode='lines',
+                line=dict(dash='dash'),
+                text = '0.05'
+            ),
+        ],
+            layout=dict(
+                title="Statistical Significance (p-value)",
+                showlegend=False,
+                yaxis=dict(type="log"),
+            ),
+        )
+    return fet_importance_fig, p_value_fig
 if __name__ == '__main__':
-#     app.run_server(host='moss8',debug=True)
-    app.run_server(debug=True)
+    app.run_server(host='moss8',debug=True)
+#     app.run_server(debug=True)
