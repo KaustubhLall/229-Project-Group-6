@@ -248,6 +248,7 @@ app.layout = dbc.Container([
                 dbc.Row(dbc.Col(html.H3("Feature Importance analysis", className='text-center text-warning '
                                                                                                         'mb-4'), width=12)),
                 dbc.Row(dcc.Markdown("""
+                 The following two charts shows the correlation between categorical features and sales data at the selected region.
                  The left bar chart shows feature importance (F-statistic) and the right bar chart shows the corresponding p-value, under the evaluation of one-way ANOVA. 
                 """)),
                 # 4th row
@@ -421,5 +422,5 @@ def fet_anova_bars(region):
         )
     return fet_importance_fig, p_value_fig
 if __name__ == '__main__':
-    app.run_server(host='moss8',debug=True)
-#     app.run_server(debug=True)
+#     app.run_server(host='moss8',debug=True)
+    app.run_server(debug=True)
