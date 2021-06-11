@@ -3,9 +3,9 @@
 
 To see the sphinx report, use these commands after cloning.
 ```
-1. $ cd docs/
-2. $ make html
-3. $ open _build/html/index.html
+$ cd docs/
+$ make html
+$ open _build/html/index.html
 ```
 
 
