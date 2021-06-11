@@ -12,7 +12,7 @@ To see the sphinx report, use these commands after cloning.
 
 **Pytest**
 
-All the test functions are included in tests.py
+All the test functions are included in _tests.py_
 
 
 
