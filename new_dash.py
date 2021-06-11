@@ -21,8 +21,6 @@ import hvplot.pandas
 
 from scipy import stats
 
-
-
 hv.extension('plotly')
 df = pd.read_csv("preprocess_data.csv")
 genres = df.Genre.unique().tolist()
@@ -61,10 +59,12 @@ def predict_sales(platform, genre, publisher, region, model_type="XG", models_an
     # Assert that a valid region and model type have been given
     regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
     model_type = model_type.lower()
-    models_d = {'rf': 'rf_model.pkl',
-                'knn': 'knn_model.pkl',
-                'dt': 'dt_model.pkl',
-                'xg': 'xg_model_'}  # xg requires a different model for each region
+    models_d = {
+        'rf': 'rf_model.pkl',
+        'knn': 'knn_model.pkl',
+        'dt': 'dt_model.pkl',
+        'xg': 'xg_model_'
+        }  # xg requires a different model for each region
     assert region in regions
     assert model_type in models_d.keys()
 
@@ -87,13 +87,13 @@ def predict_sales(platform, genre, publisher, region, model_type="XG", models_an
     # assert publisher in feature_values['Publisher']
 
     # Encode the labels for the new input
-    
+
     x1 = le['Platform'].transform([platform])[0]
-    
+
     x2 = le['Genre'].transform([genre])[0]
     x3 = le['Publisher'].transform([publisher])[0]
     x_new = np.array([x1, x2, x3]).reshape(-1, 3)
-    
+
     if model_type == 'xg':
         # Load specific regional model for xg
         model_file = os.path.join(models_and_encoder_dir, models_d[model_type] + region + ".pkl")
@@ -142,7 +142,7 @@ app.layout = dbc.Container([
     # 1st row
     dbc.Row(
         dbc.Col(html.H1("Interactive Video Games Sales Dashboard", className='text-center text-info mb-4'), width=12)
-    ),
+        ),
     dbc.Row(dcc.Markdown("""
                    **This web-app provides interactive dashboards for users to 
                    explore, analyze and predict the sales of video games.**
@@ -150,178 +150,181 @@ app.layout = dbc.Container([
                    """)),
     # 2nd row
     dbc.Tabs([dbc.Tab([
-            dbc.Row(dbc.Col(html.H3("Overall distribution of video game sales", \
-                          className='text-center text-secondary '),width=12)),
-            dbc.Row(dcc.Markdown("""
+        dbc.Row(dbc.Col(html.H3("Overall distribution of video game sales", \
+                                className='text-center text-secondary '), width=12)),
+        dbc.Row(dcc.Markdown("""
              The following charts show the distribution of cumulative sales of video games in the past 30 years,
              in both bar chart and pie chart view.
          
             
             """)),
-            dbc.Row([
-                
-                # 1st col
-                dbc.Col(dcc.Dropdown(
-                    id="dropdown",
-                    options=[{'label': 'Global', 'value': 'Global_Sales'},
-                             {'label': 'North America', 'value': 'NA_Sales'},
-                             {'label': 'Europe', 'value': 'EU_Sales'},
-                             {'label': 'Japan', 'value': 'JP_Sales'},
-                             {'label': 'Others', 'value': 'Other_Sales'},
-                             ],
-                    value='Global_Sales',
+        dbc.Row([
 
-                    clearable=False,
+            # 1st col
+            dbc.Col(dcc.Dropdown(
+                id="dropdown",
+                options=[{'label': 'Global', 'value': 'Global_Sales'},
+                         {'label': 'North America', 'value': 'NA_Sales'},
+                         {'label': 'Europe', 'value': 'EU_Sales'},
+                         {'label': 'Japan', 'value': 'JP_Sales'},
+                         {'label': 'Others', 'value': 'Other_Sales'},
+                         ],
+                value='Global_Sales',
+
+                clearable=False,
                 ), width=6),
-                # 2nd col
-                dbc.Col(dcc.Dropdown(
-                    id="dropdown_tab",
-                    options=[{'label': 'Publisher', 'value': 'Publisher'},
-                             {'label': 'Genre', 'value': 'Genre'},
-                             {'label': 'Platform', 'value': 'Platform'}
-                             ],
-                    value='Publisher',
-                    clearable=False,
+            # 2nd col
+            dbc.Col(dcc.Dropdown(
+                id="dropdown_tab",
+                options=[{'label': 'Publisher', 'value': 'Publisher'},
+                         {'label': 'Genre', 'value': 'Genre'},
+                         {'label': 'Platform', 'value': 'Platform'}
+                         ],
+                value='Publisher',
+                clearable=False,
                 ), width=6),
-                 ]),
-                # 3rd row
-                dbc.Row([
-                    # 1st col
-                    dbc.Col(
-                        dcc.Graph(id="bar-chart"), width=6
-                    ),
-                    # 2nd col
-                    dbc.Col(
-                        dcc.Graph(id="pie-chart"), width=6
-                    )]
-                  ),
-                dbc.Row(dbc.Col(html.H3("Sales VS Years with different region and Genre", \
-                                        className='text-center text-success '
-                                                                                                    'mb-4'), width=12)),
-                dbc.Row(dcc.Markdown("""
+            ]),
+        # 3rd row
+        dbc.Row([
+            # 1st col
+            dbc.Col(
+                dcc.Graph(id="bar-chart"), width=6
+                ),
+            # 2nd col
+            dbc.Col(
+                dcc.Graph(id="pie-chart"), width=6
+                )]
+            ),
+        dbc.Row(dbc.Col(html.H3("Sales VS Years with different region and Genre", \
+                                className='text-center text-success '
+                                          'mb-4'), width=12)),
+        dbc.Row(dcc.Markdown("""
                  This line chart shows the sales v.s. the year of games' release, for the given region and genre.
                 """)),
-                # 5th row (swapped)
-                dbc.Row(
-                    [dbc.Col(dcc.Dropdown(
-                        id="dropdown_line_genre",
+        # 5th row (swapped)
+        dbc.Row(
+            [dbc.Col(dcc.Dropdown(
+                id="dropdown_line_genre",
 
-                        options=list(map(lambda x: {'label': x, 'value': x}, genres)),
-                        value='Action',
-                        clearable=False,
-                    ), width=6),
-                        dbc.Col(dcc.Dropdown(
-                            id="dropdown_line_region",
-                            options=list(map(lambda x: {'label': x, 'value': x}, regions_name)),
-                            value='Global',
-                            clearable=False,
-                        ), width=6)]  # newly added
-                ),
+                options=list(map(lambda x: {'label': x, 'value': x}, genres)),
+                value='Action',
+                clearable=False,
+                ), width=6),
+                dbc.Col(dcc.Dropdown(
+                    id="dropdown_line_region",
+                    options=list(map(lambda x: {'label': x, 'value': x}, regions_name)),
+                    value='Global',
+                    clearable=False,
+                    ), width=6)]  # newly added
+            ),
 
-                dbc.Row(
-                    dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
-                ),
-                dbc.Row(dbc.Col(html.H3("Bar Plots of Sales VS Years with different region ", className='text-center text-info '
-                                                                                                        'mb-4'), width=12)),
-                dbc.Row(dcc.Markdown("""
-                 This bar chart shows the sales (for different genres) at the selected region  v.s. the year of games' release. 
+        dbc.Row(
+            dbc.Col(html.Div(id="line-chart"), width=12)  # newly added
+            ),
+        dbc.Row(dbc.Col(html.H3("Bar Plots of Sales VS Years with different region ", className='text-center text-info '
+                                                                                                'mb-4'), width=12)),
+        dbc.Row(dcc.Markdown("""
+                 This bar chart shows the sales (for different genres) at the selected region  v.s. the year of 
+                 games' release. 
                 """)),
-                # 4th row
-                dbc.Row(
-                    dbc.Col(dcc.Dropdown(
-                        id="dropdown_bar",
-                        options=[{'label': 'Global', 'value': 'Global_Sales'},
-                                 {'label': 'North America', 'value': 'NA_Sales'},
-                                 {'label': 'Europe', 'value': 'EU_Sales'},
-                                 {'label': 'Japan', 'value': 'JP_Sales'},
-                                 {'label': 'Other Regions', 'value': 'Other_Sales'},
-                                 ],
-                        value='Global_Sales',
-                        clearable=False,
-                    ), width=12)  # newly added  # modified the width
-                ),
-                # 5th row
-                dbc.Row(
-                    dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
-                ),
-                dbc.Row(),
-                dbc.Row(dbc.Col(html.H3("Feature Importance analysis", className='text-center text-warning '
-                                                                                                        'mb-4'), width=12)),
-                dbc.Row(dcc.Markdown("""
-                 The following two charts shows the correlation between categorical features and sales data at the selected region.
-                 The left bar chart shows feature importance (F-statistic) and the right bar chart shows the corresponding p-value, under the evaluation of one-way ANOVA. 
+        # 4th row
+        dbc.Row(
+            dbc.Col(dcc.Dropdown(
+                id="dropdown_bar",
+                options=[{'label': 'Global', 'value': 'Global_Sales'},
+                         {'label': 'North America', 'value': 'NA_Sales'},
+                         {'label': 'Europe', 'value': 'EU_Sales'},
+                         {'label': 'Japan', 'value': 'JP_Sales'},
+                         {'label': 'Other Regions', 'value': 'Other_Sales'},
+                         ],
+                value='Global_Sales',
+                clearable=False,
+                ), width=12)  # newly added  # modified the width
+            ),
+        # 5th row
+        dbc.Row(
+            dbc.Col(html.Div(id="bar-pie-chart"), width=12)  # newly added
+            ),
+        dbc.Row(),
+        dbc.Row(dbc.Col(html.H3("Feature Importance analysis", className='text-center text-warning '
+                                                                         'mb-4'), width=12)),
+        dbc.Row(dcc.Markdown("""
+                 The following two charts shows the correlation between categorical features and sales data at the 
+                 selected region.
+                 The left bar chart shows feature importance (F-statistic) and the right bar chart shows the 
+                 corresponding p-value, under the evaluation of one-way ANOVA. 
                 """)),
-                # 4th row
-                dbc.Row(
-                    dbc.Col(dcc.Dropdown(
-                        id="dropdown_anova",
-                        options=[{'label': 'Global', 'value': 'Global_Sales'},
-                                 {'label': 'North America', 'value': 'NA_Sales'},
-                                 {'label': 'Europe', 'value': 'EU_Sales'},
-                                 {'label': 'Japan', 'value': 'JP_Sales'},
-                                 {'label': 'Other Regions', 'value': 'Other_Sales'},
-                                 ],
-                        value='Global_Sales',
-                        clearable=False,
-                    ), width=12)  # newly added  # modified the width
+        # 4th row
+        dbc.Row(
+            dbc.Col(dcc.Dropdown(
+                id="dropdown_anova",
+                options=[{'label': 'Global', 'value': 'Global_Sales'},
+                         {'label': 'North America', 'value': 'NA_Sales'},
+                         {'label': 'Europe', 'value': 'EU_Sales'},
+                         {'label': 'Japan', 'value': 'JP_Sales'},
+                         {'label': 'Other Regions', 'value': 'Other_Sales'},
+                         ],
+                value='Global_Sales',
+                clearable=False,
+                ), width=12)  # newly added  # modified the width
+            ),
+
+        dbc.Row([
+            # 1st col
+            dbc.Col(
+                dcc.Graph(id="bar-fet-importance"), width=6
                 ),
-                
-        
-               dbc.Row([
-                    # 1st col
-                    dbc.Col(
-                        dcc.Graph(id="bar-fet-importance"), width=6
-                    ),
-                    # 2nd col
-                    dbc.Col(
-                        dcc.Graph(id="bar-p-value"), width=6
-                    )]
-                  )
-                ],label='Data Exploration'),
-               dbc.Tab([dbc.Row(dbc.Col(html.H3("Prediction model", className='text-center text-info mb-4'), width=12)),
-    # 7th row prediction dropdown
-               dbc.Row(dcc.Markdown("""
+            # 2nd col
+            dbc.Col(
+                dcc.Graph(id="bar-p-value"), width=6
+                )]
+            )
+        ], label='Data Exploration'),
+        dbc.Tab([dbc.Row(dbc.Col(html.H3("Prediction model", className='text-center text-info mb-4'), width=12)),
+                 # 7th row prediction dropdown
+                 dbc.Row(dcc.Markdown("""
                  By specifying the platform, genre, publisher, our model predicts the sales at the given region
                 """)),
-                    dbc.Row(
-                        [dbc.Col(dcc.Dropdown(
-                            id="pred-platform",
-                            options=list(map(lambda x: {'label': x, 'value': x}, platforms)),
-                            value='Console',
+                 dbc.Row(
+                     [dbc.Col(dcc.Dropdown(
+                         id="pred-platform",
+                         options=list(map(lambda x: {'label': x, 'value': x}, platforms)),
+                         value='Console',
 
-                            clearable=False,
-                        ), width=3),
-        # 2nd col
-                        dbc.Col(dcc.Dropdown(
-                            id="pred-genre",
-                            options=list(map(lambda x: {'label': x, 'value': x}, genres)),
-                            value='Action',
-                            clearable=False,
-                        ), width=3),
-        # 3rd col
-                        dbc.Col(dcc.Dropdown(
-                            id="pred-publisher",
-                            options=list(map(lambda x: {'label': x, 'value': x}, publishers)),
-                            value='Nintendo',
-                            clearable=False,
-                        ), width=3),
-        # 4th col
-                        dbc.Col(dcc.Dropdown(
-                            id="pred-region",
-                            options=[{'label': 'Global', 'value': 'Global_Sales'},
-                                     {'label': 'North America', 'value': 'NA_Sales'},
-                                     {'label': 'Europe', 'value': 'EU_Sales'},
-                                     {'label': 'Japan', 'value': 'JP_Sales'},
-                                     {'label': 'Others', 'value': 'Other_Sales'},
-                                     ],
-                            value='Global_Sales',
-                            clearable=False,
-                        ), width=3)]
-                        ),
+                         clearable=False,
+                         ), width=3),
+                         # 2nd col
+                         dbc.Col(dcc.Dropdown(
+                             id="pred-genre",
+                             options=list(map(lambda x: {'label': x, 'value': x}, genres)),
+                             value='Action',
+                             clearable=False,
+                             ), width=3),
+                         # 3rd col
+                         dbc.Col(dcc.Dropdown(
+                             id="pred-publisher",
+                             options=list(map(lambda x: {'label': x, 'value': x}, publishers)),
+                             value='Nintendo',
+                             clearable=False,
+                             ), width=3),
+                         # 4th col
+                         dbc.Col(dcc.Dropdown(
+                             id="pred-region",
+                             options=[{'label': 'Global', 'value': 'Global_Sales'},
+                                      {'label': 'North America', 'value': 'NA_Sales'},
+                                      {'label': 'Europe', 'value': 'EU_Sales'},
+                                      {'label': 'Japan', 'value': 'JP_Sales'},
+                                      {'label': 'Others', 'value': 'Other_Sales'},
+                                      ],
+                             value='Global_Sales',
+                             clearable=False,
+                             ), width=3)]
+                     ),
 
-
-    # 8th row returned text
-                        dbc.Row(html.Div(id="pred-result", style={'width':'75%', 'margin':50, 'textAlign': 'center', 'display': 'inline-block'}))],label='Data Prediction')])])
+                 # 8th row returned text
+                 dbc.Row(html.Div(id="pred-result", style={
+                     'width': '75%', 'margin': 50, 'textAlign': 'center', 'display': 'inline-block'
+                     }))], label='Data Prediction')])])
 
 
 @app.callback(
@@ -329,7 +332,7 @@ app.layout = dbc.Container([
     [Input("dropdown", "value"), Input("dropdown_tab", "value")])
 def update_bar_chart(sales, category):
     dff = sale_visualization(category, sales)
-    fig = px.bar(dff, x=category, y=sales,title='Sales(millions)')
+    fig = px.bar(dff, x=category, y=sales, title='Sales(millions)')
     return fig
 
 
@@ -361,9 +364,9 @@ def update_bar_pie_chart(region):
     hv_bar = df_filtered.hvplot.bar(stacked=True, rot=45) \
         .redim(value=hv.Dimension('value', label='Sales', range=(0, value_max))) \
         .relabel('Sales(millions)')
-    
+
     hv_bar = to_dash(app, [hv_bar])
-    
+
     return hv_bar.children
 
 
@@ -371,17 +374,17 @@ def update_bar_pie_chart(region):
     Output("pred-result", "children"),
     [Input("pred-platform", "value"), Input("pred-genre", "value"), Input("pred-publisher", "value"),
      Input("pred-region", "value")])
-def prediction_model(selected_platform, selected_genre, selected_publisher, selected_region):
+def predicti9on_model(selected_platform, selected_genre, selected_publisher, selected_region):
     # platform, genre, publisher, region,
     pred_result = predict_sales(selected_platform, selected_genre, selected_publisher, selected_region)
     return "The predicted sales is: {} million USD".format(round(pred_result, 3))
+
 
 @app.callback(
     [Output("bar-fet-importance", "figure"), Output("bar-p-value", "figure")],
     Input("dropdown_anova", "value"))
 def fet_anova_bars(region):
-    
-    fets = ['Genre','Platform','Publisher']
+    fets = ['Genre', 'Platform', 'Publisher']
 
     colors = ['blue', 'blueviolet', 'brown']
     result = {}
@@ -390,37 +393,38 @@ def fet_anova_bars(region):
         # result = {fet:(importance, p-value)}
         result[fet] = tuple(stats.f_oneway(*sales_grouped))
 
-           
-    fet_importance = list(map(lambda x:x[0], result.values()))
-    p_value = list(map(lambda x:x[1], result.values()))
+    fet_importance = list(map(lambda x: x[0], result.values()))
+    p_value = list(map(lambda x: x[1], result.values()))
     fet_importance_fig = go.Figure(go.Bar(
-            x=list(result.keys()),
-            y=fet_importance,
-            marker={'color': colors },
+        x=list(result.keys()),
+        y=fet_importance,
+        marker={'color': colors},
         ),
-            layout=dict(title="Categorical Feature Importance")
+        layout=dict(title="Categorical Feature Importance")
         )
     p_value_fig = go.Figure([
-            go.Bar(
-                x=list(result.keys()),
-                y=p_value,
-                marker={'color': colors},
+        go.Bar(
+            x=list(result.keys()),
+            y=p_value,
+            marker={'color': colors},
             ),
-            go.Scatter(
-                x=[list(result.keys())[0], list(result.keys())[-1]],
-                y=[0.05, 0.05],
-                mode='lines',
-                line=dict(dash='dash'),
-                text = '0.05'
+        go.Scatter(
+            x=[list(result.keys())[0], list(result.keys())[-1]],
+            y=[0.05, 0.05],
+            mode='lines',
+            line=dict(dash='dash'),
+            text='0.05'
             ),
         ],
-            layout=dict(
-                title="Statistical Significance (p-value)",
-                showlegend=False,
-                yaxis=dict(type="log"),
+        layout=dict(
+            title="Statistical Significance (p-value)",
+            showlegend=False,
+            yaxis=dict(type="log"),
             ),
         )
     return fet_importance_fig, p_value_fig
+
+
 if __name__ == '__main__':
-#     app.run_server(host='moss8',debug=True)
+    #     app.run_server(host='moss8',debug=True)
     app.run_server(debug=True)
