@@ -1,4 +1,5 @@
 from utils import *
+import hvplot.pandas
 
 
 def test_remove_nan():
