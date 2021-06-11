@@ -2,7 +2,7 @@ import os
 import pickle
 from math import isclose
 
-from pandas import np
+import numpy as np
 import pandas as pd
 
 
@@ -134,7 +134,6 @@ def remove_nan(df):
 
 
 def test_remove_nan():
-
     df = pd.read_csv('preprocess_data.csv')
     df = remove_nan(df)
     assert isinstance(df, pd.DataFrame)
@@ -142,7 +141,7 @@ def test_remove_nan():
 
 
 def test_predict_sales():
-    predict_sales('GC', 'Action', 'Nintendo', 'JP', "RF", "models_and_encoder")
+    predict_sales('PC', 'Action', 'Nintendo', 'JP', "RF", "models_and_encoder")
 
 
 def test_remove_outliers():
@@ -157,7 +156,7 @@ def test_remove_outliers():
     assert not df.isnull().values.any()
     # check if function works as expected
     for col in prices:
-        assert not (any([isclose(df[col][x], 0) for x in range(len(df[col]))]))
+        assert not (all([not isclose(list(df[col])[x], 0) for x in range(len(df[col]))]))
 
 
 def test_encode_df():
