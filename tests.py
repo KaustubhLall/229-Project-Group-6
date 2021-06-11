@@ -38,3 +38,19 @@ def test_sale_visualization():
     df = pd.read_csv("preprocess_data.csv")
     df.head()
     dff = sale_visualization('Publisher', 'Global_Sales')
+
+
+def test_gen_sales_vs_year():
+    gen_sales_vs_year('Genre')
+
+
+def test_get_hv_line():
+    get_hv_line('Action', 'Global')
+
+
+def test_get_hv_bar_pie():
+    get_hv_bar_pie('Global_Sales')
+
+
+def test_get_feature_importance():
+    get_feature_importance('Global_Sales')

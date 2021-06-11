@@ -4,6 +4,17 @@ from math import isclose
 
 import numpy as np
 import pandas as pd
+import holoviews as hv
+from scipy.stats import stats
+
+hv.extension('plotly')
+df = pd.read_csv("preprocess_data.csv")
+genres = df.Genre.unique().tolist()
+platforms = df.Platform.unique().tolist()
+publishers = df.Publisher.unique().tolist()
+regions = ['NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales', 'Global_Sales']
+regions_name = ['North America', 'Europe', 'Japan', 'Other Regions', 'Global']
+sales2region = dict(zip(regions, regions_name))
 
 
 def encode_df(df):
@@ -171,3 +182,64 @@ def sale_visualization(category, sale_region):
 
     return dff
 
+
+def gen_sales_vs_year(groupby):
+    """
+      Aggregate sales for the given year and 'groupby', unpivot the columns 'NA_sales', 'EU_sales' and etc. to
+      the column 'Region' with values 'North America' and 'Europe' and etc.
+
+      :param groupby: the categorical variable to group
+      :type groupby: str
+
+      :return: the processed dataframe
+      :rtype: pandas.DataFrame
+
+    """
+
+    assert groupby in ['Genre', 'Publisher', 'Platform']
+    method = 'sum'
+    aggdict = dict(zip(regions, [method] * len(regions)))
+    data = df.groupby([groupby, 'Year']).agg(aggdict)
+    data = data.reset_index()
+    data = data.melt(id_vars=[groupby, 'Year'], value_vars=regions, var_name='Region', value_name='Sales')
+
+    # map EU_Sales to Europe
+    data.Region = data.Region.map(sales2region).fillna(data.Region)
+    return data
+
+
+def get_hv_line(genre, region):
+    assert isinstance(genre, str)
+    assert isinstance(region, str)
+    assert region in regions_name
+    assert genre in genres
+
+    line_data = gen_sales_vs_year('Genre').groupby(['Genre', 'Region'])
+    data = line_data.get_group((genre, region))
+    hv_line = hv.Dataset(data=data, vdims=['Sales']).to(hv.Curve, 'Year', 'Sales').relabel('Sales(millions)')
+    return hv_line
+
+
+def get_hv_bar_pie(region):
+    assert isinstance(region, str)
+    assert region in regions
+
+    df_filtered = df.groupby(['Year', 'Genre'])[region].sum().unstack()
+    value_max = int(df_filtered.sum(1).max() * 1.1)
+    hv_bar = df_filtered.hvplot.bar(stacked=True, rot=45) \
+        .redim(value=hv.Dimension('value', label='Sales', range=(0, value_max))) \
+        .relabel('Sales(millions)')
+
+
+def get_feature_importance(region):
+    assert isinstance(region, str)
+    assert region in regions
+    fets = ['Genre', 'Platform', 'Publisher']
+
+    colors = ['blue', 'blueviolet', 'brown']
+    result = {}
+    for fet in fets:
+        sales_grouped = df.groupby(by=fet)[region].agg(list).values.tolist()
+        # result = {fet:(importance, p-value)}
+        result[fet] = tuple(stats.f_oneway(*sales_grouped))
+    return result
