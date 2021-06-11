@@ -1,5 +1,22 @@
 # 229-Project-Group-6
-Group repo 
+**Sphinx Report**
+
+To see the sphinx report, use these commands after cloning.
+```
+1. $ cd docs/
+2. $ make html
+3. $ open _build/html/index.html
+```
+
+
+
+**Pytest**
+
+All the test functions are included in tests.py
+
+
+
+**Group repo** 
 
 Dashboard beta interface
 ![image](https://user-images.githubusercontent.com/50532010/119720297-a915b300-be1e-11eb-9565-34d9e78ea46d.png)
