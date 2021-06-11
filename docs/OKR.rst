@@ -93,6 +93,8 @@ The code in jupyter notebook using ‘bokeh’ backend had to be adapted in line
 4. For the layout part, many styles were encoded as CSS format and It took me a while to properly adjust the layouts.
 
 
+Deployment:
+Docker exposing ports cannot test application locally (runs on localhost on our machine, but cannot access docker port 0.0.0.0 locally to test). Changing host to 0.0.0.0 led to a lot of difficulties until we properly configured the dockerfile, however led to a lot of confusion with AWS.
 
 
 
