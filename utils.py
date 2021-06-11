@@ -160,4 +160,52 @@ def test_remove_outliers():
 
 
 def test_encode_df():
-    pass
+    df = pd.read_csv('preprocess_data.csv')
+    df = encode_df(df)
+    assert not df.isnull().values.any()
+    assert any(['encoding' in c for c in list(df.columns)])
+
+
+def test_sale_visualization():
+    df = pd.read_csv("preprocess_data.csv")
+    df.head()
+    dff = sale_visualization('Publisher', 'Global_Sales')
+
+
+def sale_visualization(category, sale_region):
+    '''
+    This function takes the category and sale_region as inputs and returns a pandas DataFrame as output,
+    the total amount
+    of the category items from a specific sales_region will be stored and returned
+    inputs:
+    params: category, sale_region
+    types: string, string
+    output:
+    returns: dff
+    types: Pandas.DataFrame
+    '''
+    assert category in ['Publisher', 'Genre', 'Platform']
+    assert sale_region in ['Global_Sales', 'NA_Sales', 'EU_Sales', 'JP_Sales', 'Other_Sales']
+    assert isinstance(category, str)
+    assert isinstance(sale_region, str)
+
+    df = pd.read_csv("preprocess_data.csv")
+    pub_values_list = df[category].value_counts().keys().tolist()
+    publisher_avg_global_sales = []
+    for i in pub_values_list:
+        entries = df.loc[df[category] == i]
+        publisher_avg_global_sales.append(entries[sale_region].sum() / len(entries))
+
+    zipped = zip(pub_values_list, publisher_avg_global_sales)
+    sorted_zipped = list(sorted(zipped, key=lambda x: x[1]))
+    publisher_list = []
+    pub_global_list = []
+    for s in sorted_zipped:
+        publisher_list.append(s[0])
+        pub_global_list.append(s[1])
+    dic = {}
+    for s in sorted_zipped:
+        dic[s[0]] = s[1]
+    dff = pd.DataFrame(list(dic.items()), columns=[category, sale_region])
+
+    return dff
